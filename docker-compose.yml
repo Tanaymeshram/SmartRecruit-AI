@@ -1,0 +1,47 @@
+version: '3.8'
+
+services:
+  mongodb:
+    image: mongo:7.0
+    container_name: talentmatch-mongodb
+    restart: always
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_DATABASE: talentmatch_ai
+    volumes:
+      - mongo_data:/data/db
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    container_name: talentmatch-backend
+    restart: always
+    ports:
+      - "8000:8000"
+    environment:
+      - MONGODB_URI=mongodb://mongodb:27017
+      - DATABASE_NAME=talentmatch_ai
+      - SECRET_KEY=talentmatch-super-secure-production-ready-jwt-key-2026
+      - LLM_PROVIDER=demo
+      - DEMO_MODE=true
+    depends_on:
+      - mongodb
+    volumes:
+      - ./backend/data:/app/backend/data
+      - ./backend/chroma_db:/app/backend/chroma_db
+
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    container_name: talentmatch-frontend
+    restart: always
+    ports:
+      - "5173:80"
+    depends_on:
+      - backend
+
+volumes:
+  mongo_data:
